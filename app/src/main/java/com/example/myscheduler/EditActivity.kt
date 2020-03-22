@@ -4,12 +4,16 @@ import android.graphics.Color
 import android.net.ParseException
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.format.DateFormat.format
 import android.view.View
 import com.google.android.material.snackbar.Snackbar
 import io.realm.Realm
 import io.realm.kotlin.createObject
 import io.realm.kotlin.where
 import kotlinx.android.synthetic.main.activity_edit.*
+import java.lang.String.format
+import android.text.format.DateFormat
+import java.text.MessageFormat.format
 import java.text.SimpleDateFormat
 import java.util.*
 import android.icu.text.SimpleDateFormat as SimpleDateFormat1
@@ -24,23 +28,56 @@ class EditActivity : AppCompatActivity() {
         // Reealmインスタンス作成
         realm = Realm.getDefaultInstance()
 
+        // 更新処理を行う - MainActivityの登録済データを選択されて遷移してくる場合のみ
+        val scheduleId = intent?.getLongExtra("schedule_id", -1L)
+        if (scheduleId != -1L) {
+            val schedule = realm.where<Schedule>()
+                .equalTo("id", scheduleId).findFirst()
+            dateEdit.setText(DateFormat.format("yyyy/MM/dd", schedule?.date))
+            titleEdit.setText(schedule?.title)
+            detailEdit.setText(schedule?.detail)
+        }
+
         save.setOnClickListener { view: View ->
-            realm.executeTransaction { db: Realm ->
-                val maxId = db.where<Schedule>().max("id")
-                val nextId = (maxId?.toLong() ?: 0L) + 1
-                val schedule = db.createObject<Schedule>(nextId)
-                val date = dateEdit.text.toString().toDate("yyyy/MM/dd")
-                if (date != null) {
-                    schedule.date = date
+            when (scheduleId) {
+                -1L -> {
+                    realm.executeTransaction { db: Realm ->
+                        val maxId = db.where<Schedule>().max("id")
+                        val nextId = (maxId?.toLong() ?: 0L) + 1
+                        val schedule = db.createObject<Schedule>(nextId)
+                        val date = dateEdit.text.toString().toDate("yyyy/MM/dd")
+                        if (date != null) {
+                            schedule.date = date
+                        }
+                        schedule.title = titleEdit.text.toString()
+                        schedule.detail = detailEdit.text.toString()
+                    }
+
+                    Snackbar.make(view, "追加しました。", Snackbar.LENGTH_SHORT)
+                        .setAction("戻る") { finish() }
+                        .setActionTextColor(Color.YELLOW)
+                        .show()
                 }
-                schedule.title = titleEdit.text.toString()
-                schedule.detail = detailEdit.text.toString()
+                else -> {
+                    realm.executeTransaction { db: Realm ->
+                        val schedule = db.where<Schedule>()
+                            .equalTo("id", scheduleId).findFirst()
+                        val date = dateEdit.text.toString().toDate("yyy/MM/dd")
+                        if (date != null) {
+                            schedule?.date = date
+                        }
+                        schedule?.title = titleEdit.text.toString()
+                        schedule?.detail = detailEdit.text.toString()
+                    }
+
+                    Snackbar.make(view,"修正しました。", Snackbar.LENGTH_SHORT)
+                        .setAction("戻る") { finish() }
+                        .setActionTextColor(Color.YELLOW)
+                        .show()
+                }
+
             }
 
-            Snackbar.make(view, "追加しました。", Snackbar.LENGTH_SHORT)
-                .setAction("戻る") { finish() }
-                .setActionTextColor(Color.YELLOW)
-                .show()
         }
     }
 
