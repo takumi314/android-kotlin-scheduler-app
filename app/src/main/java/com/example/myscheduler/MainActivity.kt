@@ -2,10 +2,7 @@ package com.example.myscheduler
 
 import android.content.Intent
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
-import android.view.Menu
-import android.view.MenuItem
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.realm.Realm
 import io.realm.kotlin.where
@@ -29,6 +26,11 @@ class MainActivity: AppCompatActivity() {
         val schedules = realm.where<Schedule>().findAll()
         // スケジュールを渡すためのアダプアーを設定する（セルの生成/更新）
         val adapter = ScheduleAdapter(schedules)
+        adapter.setOnItemClickListener { id ->
+            val intent = Intent(this, EditActivity::class.java)
+                .putExtra("schedule_id", id)
+            startActivity(intent)
+        }
         list.adapter = adapter
 
 

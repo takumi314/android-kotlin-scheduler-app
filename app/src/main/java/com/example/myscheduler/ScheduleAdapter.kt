@@ -7,11 +7,16 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import io.realm.OrderedRealmCollection
 import io.realm.RealmRecyclerViewAdapter
-import java.text.DateFormat
 
 // データベースから取得した結果をRecylerViewに表示するための専用アダプタークラス
 class ScheduleAdapter(data: OrderedRealmCollection<Schedule>):
     RealmRecyclerViewAdapter<Schedule, ScheduleAdapter.ViewHolder>(data, true) {
+
+    private var listener: ((Long?) -> Unit)? = null
+
+    fun setOnItemClickListener(listener: (Long?) -> Unit) {
+        this.listener = listener
+    }
 
     // Initializer
 
@@ -58,6 +63,10 @@ class ScheduleAdapter(data: OrderedRealmCollection<Schedule>):
         val schedule = getItem(position)
         holder.date.text = android.text.format.DateFormat.format("yyy/MM/dd", schedule?.date)
         holder.title.text = schedule?.title
+        // セルがクリックされた時のイベント
+        holder.itemView.setOnClickListener {
+            listener?.invoke(schedule?.id)
+        }
     }
 
     // 指定された位置のアイテムを返す
